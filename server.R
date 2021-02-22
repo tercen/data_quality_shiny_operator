@@ -2,6 +2,15 @@ library(shiny)
 library(tercen)
 library(dplyr)
 library(tidyr)
+library(dlookr)
+library(DT)
+library(formattable)
+
+# need latticeExtra for R < 3.6
+# install.packages("https://cran.r-project.org/src/contrib/Archive/latticeExtra/latticeExtra_0.6-28.tar.gz",
+#                  repos = NULL,
+#                  type = "source") 
+# install.packages("dlookr")
 
 ############################################
 #### This part should not be modified

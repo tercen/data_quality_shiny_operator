@@ -1,7 +1,7 @@
 {
-  "name": "Template Shiny Operator",
-  "description": "Template to create a Shiny operator in Tercen.",
-  "tags": ["template"],
+  "name": "Data quality operator",
+  "description": "Diagnostic of data quality and data transformation.",
+  "tags": ["data import", "data wrangling", "quality control"],
   "authors": ["tercen"],
-  "urls": ["https://github.com/tercen/template_shiny_operator"]
+  "urls": ["https://github.com/tercen/data_quality_shiny_operator"]
 }

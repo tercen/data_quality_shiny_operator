@@ -2,12 +2,21 @@ library(shiny)
 library(tercen)
 library(dplyr)
 library(tidyr)
+library(dlookr)
+library(DT)
+library(formattable)
 
+# need latticeExtra for R < 3.6
+# install.packages("https://cran.r-project.org/src/contrib/Archive/latticeExtra/latticeExtra_0.6-28.tar.gz",
+#                  repos = NULL,
+#                  type = "source") 
+# install.packages("dlookr")
+  
 ############################################
 #### This part should not be included in ui.R and server.R scripts
 getCtx <- function(session) {
-  ctx <- tercenCtx(stepId = "9b7619c7-4d66-49fa-9bb3-2b06209e58e4",
-                   workflowId = "f81d245ef22a2ff192ed2533a6002ec3")
+  ctx <- tercenCtx(stepId = "f0f7c34d-e438-459f-be32-fcde2a205abe",
+                   workflowId = "2553cb89b6ec3bc593e238e0df047713")
   return(ctx)
 }
 ####
@@ -15,18 +24,35 @@ getCtx <- function(session) {
 
 ui <- shinyUI(fluidPage(
   
-  titlePanel("Histogram"),
+  titlePanel("Data quality"),
   
   sidebarPanel(
-    sliderInput("plotWidth", "Plot width (px)", 200, 2000, 500),
-    sliderInput("plotHeight", "Plot height (px)", 200, 2000, 500),
+    sliderInput("plotWidth", "Plot width (px)", 200, 2000, 800),
+    sliderInput("plotHeight", "Plot height (px)", 200, 2000, 500)
   ),
   
-  mainPanel(
-    uiOutput("reacOut")
+  mainPanel(tabsetPanel(type = "tabs",
+    tabPanel("Overview",
+      dataTableOutput("diagnose_table")
+    ),
+    tabPanel("Missing data",
+      uiOutput("reacOut")
+    ),
+    tabPanel("Data transformation",
+      h4("Check / change data types"),
+      h4("Remove rows with too many missing values"),
+      h4("Remove columns with too many missing values"),
+      h4("Impute remaining NAs"),
+      h4("Impute remaining NAs"),
+      h4("Log transform"),
+      h4("button to run transformation"),
+      actionButton("button", "Transform data!")
+      
+    )
+    
   )
   
-))
+)))
 
 server <- shinyServer(function(input, output, session) {
   
@@ -36,29 +62,47 @@ server <- shinyServer(function(input, output, session) {
   
   output$reacOut <- renderUI({
     plotOutput(
-      "main.plot",
+      "na_plot",
       height = input$plotHeight,
       width = input$plotWidth
     )
-  }) 
-  
-  output$main.plot <- renderPlot({
-    values <- dataInput()
-    data <- values$data$.y
-    hist(data)
+  })
+
+  output$na_plot <- renderPlot({
+    d <- dataInput()
+    dlookr::plot_na_pareto(d)
+    # dlookr::plot_na_hclust(d)
   })
   
+  output$diagnose_table <- renderDataTable({
+    d <- dataInput()
+    ## overview
+    d_out <- dlookr::diagnose(d)
+    dd <- formattable::formattable(d_out,
+                             list(missing_percent = color_tile("white", "orange")))
+    as.datatable(dd)
+  })
+  
+  observeEvent(input$button, {
+    d <- dataInput()
+    d$.ci <- 0
+    ctx <- getCtx(session)
+    d %>% ctx$addNamespace() %>% ctx$save()
+  })
+
 })
 
 getValues <- function(session){
   ctx <- getCtx(session)
-  values <- list()
 
-  values$data <- ctx %>% select(.y, .ri, .ci) %>%
-    group_by(.ci, .ri) %>%
-    summarise(.y = mean(.y)) # take the mean of multiple values per cell
-
-  return(values)
+  ## load input table
+  documentId <- ctx$cselect()[[1]]
+  client = ctx$client
+  schema = client$tableSchemaService$get(documentId)
+  df <- as_tibble(client$tableSchemaService$select(schema$id, list(), 0, schema$nRows))
+  
+  return(df)
 }
 
 runApp(shinyApp(ui, server))  
+

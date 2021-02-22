@@ -1,4 +1,4 @@
-# Template Shiny operator for Tercen
+# Data quality operator
 
 ##### Description
 
@@ -8,16 +8,11 @@ The `Template Shiny operator` is a template repository for the creation of Shiny
 
 Input projection|.
 ---|---
-`x-axis`        | type, description 
-`y-axis`        | type, description 
-`row`           | type, description 
-`column`        | type, description 
-`colors`        | type, description 
-`labels`        | type, description 
+`column`        | document ID
 
 Output relations|.
 ---|---
-`Operator view`        | view of the Shiny application
+`table`        | output data table
 
 ##### Details
 
@@ -25,4 +20,4 @@ Details on the computation.
 
 ##### See Also
 
-[template_R_operator](https://github.com/tercen/template_R_operator)
+[data_cleaning_operator](https://github.com/tercen/data_cleaning_operator)
