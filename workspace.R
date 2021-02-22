@@ -3,7 +3,6 @@ library(tercen)
 library(dplyr)
 library(tidyr)
 library(dlookr)
-library(DT)
 library(formattable)
 
 # need latticeExtra for R < 3.6
