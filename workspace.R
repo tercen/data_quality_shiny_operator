@@ -33,7 +33,7 @@ ui <- shinyUI(fluidPage(
   
   mainPanel(tabsetPanel(type = "tabs",
     tabPanel("Overview",
-      dataTableOutput("diagnose_table")
+      formattableOutput("diagnose_table")
     ),
     tabPanel("Missing data",
       uiOutput("reacOut")
@@ -74,13 +74,13 @@ server <- shinyServer(function(input, output, session) {
     # dlookr::plot_na_hclust(d)
   })
   
-  output$diagnose_table <- renderDataTable({
+  output$diagnose_table <- renderFormattable({
     d <- dataInput()
     ## overview
     d_out <- dlookr::diagnose(d)
     dd <- formattable::formattable(d_out,
                              list(missing_percent = color_tile("white", "orange")))
-    as.datatable(dd)
+    (dd)
   })
   
   observeEvent(input$button, {

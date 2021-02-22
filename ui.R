@@ -14,7 +14,7 @@ shinyUI(fluidPage(
       type = "tabs",
       tabPanel(
         "Overview",
-        dataTableOutput("diagnose_table")
+        formattableOutput("diagnose_table")
       ),
       tabPanel(
         "Missing data",

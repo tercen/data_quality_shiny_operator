@@ -35,28 +35,44 @@ shinyServer(function(input, output, session) {
   
   output$reacOut <- renderUI({
     plotOutput(
-      "main.plot",
+      "na_plot",
       height = input$plotHeight,
       width = input$plotWidth
     )
-  }) 
+  })
   
-  output$main.plot <- renderPlot({
-    values <- dataInput()
-    data <- values$data$.y
-    hist(data)
+  output$na_plot <- renderPlot({
+    d <- dataInput()
+    dlookr::plot_na_pareto(d)
+    # dlookr::plot_na_hclust(d)
+  })
+  
+  output$diagnose_table <- renderFormattable({
+    d <- dataInput()
+    ## overview
+    d_out <- dlookr::diagnose(d)
+    dd <- formattable::formattable(d_out,
+                                   list(missing_percent = color_tile("white", "orange")))
+    (dd)
+  })
+  
+  observeEvent(input$button, {
+    d <- dataInput()
+    d$.ci <- 0
+    ctx <- getCtx(session)
+    d %>% ctx$addNamespace() %>% ctx$save()
   })
   
 })
 
 getValues <- function(session){
   ctx <- getCtx(session)
-  values <- list()
   
-  values$data <- ctx %>% select(.y, .ri, .ci) %>%
-    group_by(.ci, .ri) %>%
-    summarise(.y = mean(.y)) # take the mean of multiple values per cell
+  ## load input table
+  documentId <- ctx$cselect()[[1]]
+  client = ctx$client
+  schema = client$tableSchemaService$get(documentId)
+  df <- as_tibble(client$tableSchemaService$select(schema$id, list(), 0, schema$nRows))
   
-  return(values)
+  return(df)
 }
-
