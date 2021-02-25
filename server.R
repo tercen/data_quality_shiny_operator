@@ -32,30 +32,66 @@ shinyServer(function(input, output, session) {
     getValues(session)
   })
   
+  overviewTable <- reactive({
+    d <- dlookr::diagnose(dataInput())
+    d$missing_percent <- round(d$missing_percent, 1)
+    d$unique_rate <- round(100 * d$unique_rate, 1)
+    colnames(d) <- c("Variable", "Type", "# missing", "% missing", "# unique", "% unique")
+    d
+  })
+  
+  output$select_col <- renderUI({
+    cl <- colnames(overviewTable())
+    selectInput(inputId = "overview_sort", label = "Sort by", selected = cl[1], choices = cl)
+  })
+  
   output$reacOut <- renderUI({
     plotOutput(
       "na_plot",
-      height = input$plotHeight,
-      width = input$plotWidth
+      height = input$hscale * 500,
+      width = input$wscale * ncolumns() * 30
     )
   })
-  
+  output$reacOut_2 <- renderUI({
+    plotOutput(
+      "na_plot_2",
+      height = input$hscale * ncolumns() * 15,
+      width = input$wscale * 800
+    )
+  })
   output$na_plot <- renderPlot({
     d <- dataInput()
     dlookr::plot_na_pareto(d)
-    # dlookr::plot_na_hclust(d)
+  })
+  output$na_plot_2 <- renderPlot({
+    d <- dataInput()
+    dlookr::plot_na_hclust(d)
   })
   
+  ncolumns <- reactive({
+    ncol(dataInput())
+  })
+  
+  
   output$diagnose_table <- renderFormattable({
-    d <- dataInput()
+    
     ## overview
-    d_out <- dlookr::diagnose(d)
-    dd <- formattable::formattable(d_out,
-                                   list(missing_percent = color_tile("white", "orange")))
+    d_out <- overviewTable()
+    if(!is.null(input$overview_sort)) d_out <- d_out[order(d_out[[input$overview_sort]], decreasing = TRUE), ]
+    dd <- formattable::formattable(
+      d_out,
+      list(
+        `% missing` = color_tile("white", "orange"),
+        `% unique` = color_tile("white", "lightblue")
+      )
+    )
     (dd)
   })
   
   observeEvent(input$button, {
+    
+    #shinyjs::disable("button")
+    
     d <- dataInput()
     d$.ci <- 0
     ctx <- getCtx(session)

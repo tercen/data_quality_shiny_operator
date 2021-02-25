@@ -4,6 +4,7 @@ library(dplyr)
 library(tidyr)
 library(dlookr)
 library(formattable)
+library(shinyjs)
 
 # need latticeExtra for R < 3.6
 # install.packages("https://cran.r-project.org/src/contrib/Archive/latticeExtra/latticeExtra_0.6-28.tar.gz",
@@ -26,63 +27,103 @@ ui <- shinyUI(fluidPage(
   titlePanel("Data quality"),
   
   sidebarPanel(
-    sliderInput("plotWidth", "Plot width (px)", 200, 2000, 800),
-    sliderInput("plotHeight", "Plot height (px)", 200, 2000, 500)
+    sliderInput("wscale", "Plot width scale", 0, 3, 1, 0.2),
+    sliderInput("hscale", "Plot height scale", 0, 3, 1, 0.2)
   ),
   
-  mainPanel(tabsetPanel(type = "tabs",
-    tabPanel("Overview",
-      formattableOutput("diagnose_table")
-    ),
-    tabPanel("Missing data",
-      uiOutput("reacOut")
-    ),
-    tabPanel("Data transformation",
-      h4("Check / change data types"),
-      h4("Remove rows with too many missing values"),
-      h4("Remove columns with too many missing values"),
-      h4("Impute remaining NAs"),
-      h4("Impute remaining NAs"),
-      h4("Log transform"),
-      h4("button to run transformation"),
-      actionButton("button", "Transform data!")
+  mainPanel(
+    tabsetPanel(
+      type = "tabs",
+      tabPanel(
+        "Overview",
+        uiOutput("select_col"),
+        formattableOutput("diagnose_table")
+      ),
+      tabPanel(
+        "Missing data",
+        uiOutput("reacOut"),
+        uiOutput("reacOut_2")
+      ),
+      tabPanel(
+        "Data transformation",
+        numericInput("max_na_prop_row", "Maximum missing proportion (per row)", value = 0, min = 0, max = 1),
+        numericInput("max_na_prop_col", "Maximum missing proportion (per column)", value = 0, min = 0, max = 1),
+        checkboxInput("imputena", "Impute remaining NAs", value = FALSE),
+        h5("Click below to send data back to Tercen"),
+        actionButton("button", "Transform data!")
+        
+      )
       
     )
     
-  )
-  
-)))
+  )))
 
 server <- shinyServer(function(input, output, session) {
   
   dataInput <- reactive({
     getValues(session)
   })
+
+  overviewTable <- reactive({
+    d <- dlookr::diagnose(dataInput())
+    d$missing_percent <- round(d$missing_percent, 1)
+    d$unique_rate <- round(100 * d$unique_rate, 1)
+    colnames(d) <- c("Variable", "Type", "# missing", "% missing", "# unique", "% unique")
+    d
+  })
   
+  output$select_col <- renderUI({
+    cl <- colnames(overviewTable())
+    selectInput(inputId = "overview_sort", label = "Sort by", selected = cl[1], choices = cl)
+  })
+    
   output$reacOut <- renderUI({
     plotOutput(
       "na_plot",
-      height = input$plotHeight,
-      width = input$plotWidth
+      height = input$hscale * 500,
+      width = input$wscale * ncolumns() * 30
     )
   })
-
+  output$reacOut_2 <- renderUI({
+    plotOutput(
+      "na_plot_2",
+      height = input$hscale * ncolumns() * 15,
+      width = input$wscale * 800
+    )
+  })
   output$na_plot <- renderPlot({
     d <- dataInput()
     dlookr::plot_na_pareto(d)
-    # dlookr::plot_na_hclust(d)
+  })
+  output$na_plot_2 <- renderPlot({
+    d <- dataInput()
+    dlookr::plot_na_hclust(d)
   })
   
+  ncolumns <- reactive({
+    ncol(dataInput())
+  })
+  
+  
   output$diagnose_table <- renderFormattable({
-    d <- dataInput()
+
     ## overview
-    d_out <- dlookr::diagnose(d)
-    dd <- formattable::formattable(d_out,
-                             list(missing_percent = color_tile("white", "orange")))
+    d_out <- overviewTable()
+    if(!is.null(input$overview_sort)) d_out <- d_out[order(d_out[[input$overview_sort]], decreasing = TRUE), ]
+    dd <- formattable::formattable(
+      d_out,
+      list(
+        `% missing` = color_tile("white", "orange"),
+        `% unique` = color_tile("white", "lightblue")
+      )
+    )
     (dd)
   })
   
   observeEvent(input$button, {
+    
+    #shinyjs::disable("button")
+    
     d <- dataInput()
     d$.ci <- 0
     ctx <- getCtx(session)

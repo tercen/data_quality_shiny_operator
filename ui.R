@@ -6,8 +6,8 @@ shinyUI(fluidPage(
   titlePanel("Data quality"),
   
   sidebarPanel(
-    sliderInput("plotWidth", "Plot width (px)", 200, 2000, 800),
-    sliderInput("plotHeight", "Plot height (px)", 200, 2000, 500)
+    sliderInput("wscale", "Plot width scale", 0, 3, 1, 0.2),
+    sliderInput("hscale", "Plot height scale", 0, 3, 1, 0.2)
   ),
   
   mainPanel(
@@ -15,21 +15,20 @@ shinyUI(fluidPage(
       type = "tabs",
       tabPanel(
         "Overview",
+        uiOutput("select_col"),
         formattableOutput("diagnose_table")
       ),
       tabPanel(
         "Missing data",
-        uiOutput("reacOut")
+        uiOutput("reacOut"),
+        uiOutput("reacOut_2")
       ),
       tabPanel(
         "Data transformation",
-        h4("Check / change data types"),
-        h4("Remove rows with too many missing values"),
-        h4("Remove columns with too many missing values"),
-        h4("Impute remaining NAs"),
-        h4("Impute remaining NAs"),
-        h4("Log transform"),
-        h4("button to run transformation"),
+        numericInput("max_na_prop_row", "Maximum missing proportion (per row)", value = 0, min = 0, max = 1),
+        numericInput("max_na_prop_col", "Maximum missing proportion (per column)", value = 0, min = 0, max = 1),
+        checkboxInput("imputena", "Impute remaining NAs", value = FALSE),
+        h5("Click below to send data back to Tercen"),
         actionButton("button", "Transform data!")
         
       )
