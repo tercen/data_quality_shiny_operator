@@ -90,13 +90,17 @@ shinyServer(function(input, output, session) {
   
   observeEvent(input$button, {
     
-    #shinyjs::disable("button")
+    shinyjs::disable("button")
     
     d <- dataInput()
     d$.ci <- 0
-    ctx <- getCtx(session)
+    ctx <- context()
     d %>% ctx$addNamespace() %>% ctx$save()
   })
+  context <- reactive({
+    getCtx(session)
+  })
+  
   
 })
 

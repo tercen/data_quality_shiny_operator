@@ -24,6 +24,15 @@ getCtx <- function(session) {
 
 ui <- shinyUI(fluidPage(
   
+  shinyjs::useShinyjs(),
+  tags$script(
+    HTML(
+      'setInterval(function(){ $("#hiddenButton").click(); }, 1000*30);'
+    )
+  ),
+  tags$footer(shinyjs::hidden(
+    actionButton(inputId = "hiddenButton", label = "hidden")
+  )),
   titlePanel("Data quality"),
   
   sidebarPanel(
@@ -122,13 +131,17 @@ server <- shinyServer(function(input, output, session) {
   
   observeEvent(input$button, {
     
-    #shinyjs::disable("button")
+    shinyjs::disable("button")
     
     d <- dataInput()
     d$.ci <- 0
-    ctx <- getCtx(session)
+    ctx <- context()
     d %>% ctx$addNamespace() %>% ctx$save()
   })
+  context <- reactive({
+    getCtx(session)
+  })
+  
 
 })
 
