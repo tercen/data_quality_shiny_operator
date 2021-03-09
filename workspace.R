@@ -12,11 +12,14 @@ library(shinyjs)
 #                  type = "source") 
 # install.packages("dlookr")
   
+options("tercen.serviceUri"="http://172.17.0.1:5400/api/v1/")
+
 ############################################
+# http://127.0.0.1:5400/alex/w/2e6fffab1bcd8ff472773c007d1065c0/ds/5e2d0356-30b6-480e-9fda-16858415f9ee
 #### This part should not be included in ui.R and server.R scripts
 getCtx <- function(session) {
-  ctx <- tercenCtx(stepId = "f0f7c34d-e438-459f-be32-fcde2a205abe",
-                   workflowId = "2553cb89b6ec3bc593e238e0df047713")
+  ctx <- tercenCtx(stepId = "5e2d0356-30b6-480e-9fda-16858415f9ee",
+                   workflowId = "2e6fffab1bcd8ff472773c007d1065c0")
   return(ctx)
 }
 ####
